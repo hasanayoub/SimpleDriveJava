@@ -1,0 +1,84 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost/simple_drive?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Riyadh&max_allowed_packet=16M&allowPublicKeyRetrieval=true
+    username: ENC(/mdxgqYmS1W0x0vKT2mjrg==)
+    password: ENC(HArjwKdi7bXKnl0hKQTgAjfs2ErUZGrs)
+    hikari:
+      minimumIdle: 2
+      maximumPoolSize: 10
+      idleTimeout: 120000
+      connectionTimeout: 300000
+      leakDetectionThreshold: 1300000
+      poolName: Hikari
+      auto-commit: false
+      data-source-properties:
+        cachePrepStmts: false
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+    type: com.zaxxer.hikari.HikariDataSource
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    database: MYSQL
+    show-sql: false
+    properties:
+      hibernate.id.new_generator_mappings: true
+      hibernate.connection.provider_disables_autocommit: true
+      hibernate.cache.use_second_level_cache: false
+      hibernate.cache.use_query_cache: false
+      hibernate.generate_statistics: false
+      hibernate.jdbc.time_zone: Asia/Riyadh
+      hibernate.enable_lazy_load_no_trans: true
+      hibernate.hbm2ddl.auto: none
+      hibernate:
+        format_sql: true
+app:
+  StorageType: S3
+  Logging:
+    LogLevel:
+      Default: Information
+      Microsoft.AspNetCore: Warning
+
+  UserAuth:
+    Username: hasanayoub
+    HashedPassword: $2a$11$FCRORnSzE45OCBO8jAFNO.clADAJv5/FUKcXdU9HrR7uTHxhnReZ2
+
+  JwtToken:
+    TokenIssuer: HassanAyoub
+    JwtSecretKey: S9@q(cJE2AgfM%PwI(pZSXjNBwH#W&mp
+    TokenAudience: PublicUsers
+
+  Minio:
+    BucketUrl: https://minio-drivey.eu.ngrok.io
+    AccessKey: 75F6AM42UAL3MV8NWH49
+    SecretKey: HpEYTKiC+bqEpU7+sDdxpYzBNN+Me5x+YY8PJVzZ
+    Region: us-east-1
+
+  S3:
+    BucketUrl: https://paylinkspaces.ams3.digitaloceanspaces.com
+    AccessKey: DO00WGRPUQTAXA9RZB9F
+    SecretKey: uPDVBvDSjVen4bIRnhWdcB5r89MdS/Y6pKsoyu7BWdk
+    Region: us-east-1
+
+  FTP:
+    FtpUrl: ftp://ftp.drivehq.com
+    FtpUsername: hassan.ayoub.1980
+    FtpPassword: Password@123
+
+  FileSystem:
+    StoragePath: /Users/hassanayoub/SimpleDrive/Storage
+
+  Database:
+    Server: localhost
+    DatabaseName: simple_drive
+    User: root
+    Password: rootroot
+    Rdbms: MySQL
+    RdbmsVersion: 8.4.3
+
+  Testing:
+    FilePath: /Users/hassanayoub/Downloads/image_file.jpg
+    ServerUrl: https://simple-data.eu.ngrok.io
+    FileHashValue: ead583c99bf78343ff4ff2efd21b0d17816169e5944d673d806ecced15e11c3c
+    Username: hassanayoub
+    Password: Password@123

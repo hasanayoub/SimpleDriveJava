@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: SimpleDrive
+app:
+  appSecret: YjJMB9y4shdriveS4ME+HN==

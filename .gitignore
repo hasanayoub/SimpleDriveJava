@@ -1,0 +1,83 @@
+# Logs
+logs/
+*.log
+*.log.*
+
+# Temporary files
+*.tmp
+*.temp
+
+# Compiled class files
+*.class
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# Gradle
+.gradle/
+build/
+!gradle-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+.target/
+
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VS Code
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Application-specific
+*.war
+*.jar
+*.ear
+
+# Spring Boot
+application-*.properties
+application-*.yml
+
+# Database
+*.db
+*.sqlite
+
+# Lombok generated files
+*.lombok.config
+
+# Security
+.env
+*.key
+*.pem
+*.p12
+
+# Miscellaneous
+!.gitignore
+.idea/
+node_modules/
