@@ -1,5 +1,11 @@
 spring:
   application:
     name: SimpleDrive
+# spring.jpa.hibernate.naming.physical-strategy=org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+  jpa:
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
 app:
   appSecret: YjJMB9y4shdriveS4ME+HN==
+

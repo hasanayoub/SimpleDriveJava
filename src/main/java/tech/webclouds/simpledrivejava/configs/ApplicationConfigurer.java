@@ -1,10 +1,12 @@
 package tech.webclouds.simpledrivejava.configs;
 
+import jakarta.validation.Validator;
 import org.jasypt.encryption.StringEncryptor;
 import org.jasypt.encryption.pbe.PooledPBEStringEncryptor;
 import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import tech.webclouds.simpledrivejava.helpers.Encryptor;
 
 @Configuration
@@ -14,6 +16,11 @@ public class ApplicationConfigurer {
 
     public ApplicationConfigurer(ApplicationProperties applicationProperties) {
         this.applicationProperties = applicationProperties;
+    }
+
+    @Bean
+    public Validator validator() {
+        return new LocalValidatorFactoryBean();
     }
 
     @Bean

@@ -1,11 +1,14 @@
 package tech.webclouds.simpledrivejava.controllers;
 
 import jakarta.transaction.Transactional;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
+import jakarta.validation.Validator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import tech.webclouds.simpledrivejava.configs.ApplicationProperties;
 import tech.webclouds.simpledrivejava.helpers.StorageServiceFactory;
@@ -14,6 +17,7 @@ import tech.webclouds.simpledrivejava.models.entities.BlobStorageType;
 import tech.webclouds.simpledrivejava.models.packets.BlobRequest;
 import tech.webclouds.simpledrivejava.models.packets.BlobResponse;
 import tech.webclouds.simpledrivejava.repositories.BlobMetadataRepository;
+import tech.webclouds.simpledrivejava.services.IStorageService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,17 +26,21 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v1/blobs")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ROLE_USER')")
+@Validated
 public class BlobController {
 
     private final BlobMetadataRepository metadataRepository;
     private final StorageServiceFactory storageServiceFactory;
     private final BlobStorageType storageType;
+    private final Validator validator;
 
     @Autowired
-    public BlobController(BlobMetadataRepository metadataRepository, StorageServiceFactory storageServiceFactory, ApplicationProperties applicationProperties) {
+    public BlobController(BlobMetadataRepository metadataRepository, StorageServiceFactory storageServiceFactory,
+                          ApplicationProperties applicationProperties, Validator validator) {
         this.metadataRepository = metadataRepository;
         this.storageServiceFactory = storageServiceFactory;
         this.storageType = BlobStorageType.valueOf(applicationProperties.getStorageType());
+        this.validator = validator;
     }
 
     @GetMapping("/{id}")
@@ -61,6 +69,12 @@ public class BlobController {
     @PostMapping
     @Transactional
     public ResponseEntity<?> uploadBlob(@Valid @RequestBody BlobRequest request) {
+
+        var violations = validator.validate(request);
+        if (!violations.isEmpty()) {
+            return ResponseEntity.badRequest().body(violations.stream().map(ConstraintViolation::getMessage).toList());
+        }
+
         // Validate for existing blob ID
         if (metadataRepository.existsByBlobId(request.id())) {
             return ResponseEntity.badRequest().body(Map.of("message", "Blob Id already exists"));
@@ -74,8 +88,9 @@ public class BlobController {
         byte[] data = Base64.getDecoder().decode(base64Data);
 
         BlobMetadata metadata = new BlobMetadata(null, request.id(), storageType, data.length, new Date(), contentType);
-        metadataRepository.save(metadata);
-        boolean isSaved = storageServiceFactory.getStorageService(storageType).saveBlob(request.id(), data, contentType);
+        metadata = metadataRepository.save(metadata);
+        IStorageService storageService = storageServiceFactory.getStorageService(storageType);
+        boolean isSaved = storageService.saveBlob(request.id(), data, contentType);
         if (!isSaved) {
             return ResponseEntity.badRequest().body(Map.of("message", "Failed to store blob"));
         }
@@ -95,8 +110,8 @@ public class BlobController {
         String contentType = split[0].replace("data:", "");
         String base64Data = split[1].replace("base64,", "");
         var map = new HashMap<String, String>();
-        map.put("ContentType", contentType);
-        map.put("Base64Data", base64Data);
+        map.put("contentType", contentType);
+        map.put("base64Data", base64Data);
         return map;
     }
 }

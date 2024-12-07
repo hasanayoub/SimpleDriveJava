@@ -1,6 +1,7 @@
 package tech.webclouds.simpledrivejava;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.lang.Assert;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,34 +23,34 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
+@SpringBootTest("spring.profiles.active=localhost")
 class SimpleDriveJavaApplicationTests {
 
-    @Value("${S3.BucketUrl}")
+    @Value("${app.S3.BucketUrl}")
     private String bucketUrl;
 
-    @Value("${S3.Region}")
+    @Value("${app.S3.Region}")
     private String region;
 
-    @Value("${S3.AccessKey}")
+    @Value("${app.S3.AccessKey}")
     private String accessKey;
 
-    @Value("${S3.SecretKey}")
+    @Value("${app.S3.SecretKey}")
     private String secretKey;
 
-    @Value("${Testing.FilePath}")
+    @Value("${app.Testing.FilePath}")
     private String filePath;
 
-    @Value("${Testing.ServerUrl}")
+    @Value("${app.Testing.ServerUrl}")
     private String serverUrl;
 
-    @Value("${Testing.FileHashValue}")
+    @Value("${app.Testing.FileHashValue}")
     private String fileHashValue;
 
-    @Value("${Testing.Username}")
+    @Value("${app.Testing.Username}")
     private String username;
 
-    @Value("${Testing.Password}")
+    @Value("${app.Testing.Password}")
     private String password;
 
     private HttpClient httpClient;
@@ -75,6 +76,23 @@ class SimpleDriveJavaApplicationTests {
     }
 
     @Test
+    public void uploadBlob_CheckS3Upload() throws Exception {
+        // Arrange
+        byte[] fileContent = Files.readAllBytes(new File(filePath).toPath());
+        String id = UUID.randomUUID().toString();
+
+        AwsV4Agent awsV4Agent = new AwsV4Agent("s3", region, accessKey, secretKey);
+        HttpRequest put = awsV4Agent.prepareRequest(bucketUrl + "/files/" + id, "PUT", fileContent);
+
+        try (var httpClient = HttpClient.newHttpClient()) {
+            HttpResponse<Void> response = httpClient.send(put, HttpResponse.BodyHandlers.discarding());
+            System.out.println("Response Body: " + response.body());
+            System.out.println("Status Code: " + response.statusCode());
+            Assert.isTrue(response.statusCode() == 200 || response.statusCode() == 204);
+        }
+    }
+
+    @Test
     public void uploadBlob_ShouldReturnOk() throws Exception {
         // Arrange
         byte[] fileContent = Files.readAllBytes(new File(filePath).toPath());
@@ -84,9 +102,14 @@ class SimpleDriveJavaApplicationTests {
         blobRequest.put("id", UUID.randomUUID().toString());
         blobRequest.put("data", "data:image/jpeg;base64," + fileContentBase64);
 
+        String json = objectMapper.writeValueAsString(blobRequest);
+
         String token = getToken();
 
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/blobs")).header("Content-Type", "application/json").header("Authorization", "Bearer " + token).POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(blobRequest))).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/blobs"))
+                .header("Content-Type", "application/json").header("Authorization", "Bearer " + token)
+                .POST(HttpRequest.BodyPublishers.ofString(json))
+                .build();
 
         // Act
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -114,7 +137,11 @@ class SimpleDriveJavaApplicationTests {
 
         String token = getToken();
 
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/blobs")).header("Content-Type", "application/json").header("Authorization", "Bearer " + token).POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(invalidBlobRequest))).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/blobs"))
+                .header("Content-Type", "application/json")
+                .header("Authorization", "Bearer " + token)
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(invalidBlobRequest)))
+                .build();
 
         // Act
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -141,7 +168,10 @@ class SimpleDriveJavaApplicationTests {
         loginRequest.put("username", username);
         loginRequest.put("password", password);
 
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/auth/login")).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(loginRequest))).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(serverUrl + "/api/v1/auth/login"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(loginRequest)))
+                .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         assertEquals(HttpStatus.OK.value(), response.statusCode());

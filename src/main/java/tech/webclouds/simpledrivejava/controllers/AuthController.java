@@ -26,7 +26,7 @@ public class AuthController {
             return ResponseEntity.status(401).body(Map.of("Message", "Invalid username or password."));
         }
         String token = tokenAgent.generateJwtToken(request.username(), "ROLE_USER");
-        return ResponseEntity.ok(Map.of("Token", token));
+        return ResponseEntity.ok(Map.of("token", token));
     }
 }
 

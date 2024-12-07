@@ -18,7 +18,7 @@ public class FtpStorageService implements IStorageService {
     private final String ftpPassword;
 
     public FtpStorageService(ApplicationProperties applicationProperties) {
-        this.ftpServerUrl = applicationProperties.getFtp().getFtpUrl();
+        this.ftpServerUrl = applicationProperties.getFtp().getFtpUrl().endsWith("/") ? applicationProperties.getFtp().getFtpUrl() : applicationProperties.getFtp().getFtpUrl() + "/";
         this.ftpUsername = applicationProperties.getFtp().getFtpUsername();
         this.ftpPassword = applicationProperties.getFtp().getFtpPassword();
     }

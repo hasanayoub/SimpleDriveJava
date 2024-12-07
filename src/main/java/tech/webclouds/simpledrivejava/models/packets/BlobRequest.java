@@ -4,9 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.springframework.validation.annotation.Validated;
 
 import java.io.Serializable;
 
+@Validated
 public record BlobRequest(
         @JsonProperty("id")
         @NotEmpty(message = "Invalid input. Id is required.")

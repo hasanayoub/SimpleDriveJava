@@ -23,7 +23,7 @@ public class S3StorageService implements IStorageService {
     private final String region;
 
     public S3StorageService(ApplicationProperties applicationProperties) {
-        this.bucketUrl = applicationProperties.getS3().getBucketUrl();
+        this.bucketUrl = applicationProperties.getS3().getBucketUrl().endsWith("/") ? applicationProperties.getS3().getBucketUrl() : applicationProperties.getS3().getBucketUrl() + "/";
         this.accessKey = applicationProperties.getS3().getAccessKey();
         this.secretKey = applicationProperties.getS3().getSecretKey();
         this.region = applicationProperties.getS3().getRegion();
