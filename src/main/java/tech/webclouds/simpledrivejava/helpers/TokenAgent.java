@@ -23,10 +23,11 @@ public class TokenAgent {
         this.audience = applicationProperties.getJwtToken().getTokenAudience();
     }
 
-    public String generateJwtToken(String username) {
+    public String generateJwtToken(String username, String role) {
         return Jwts.builder()
                 .subject(username)
                 .id(UUID.randomUUID().toString())
+                .claim("role", role)
                 .issuer(issuer)
                 .expiration(new Date(System.currentTimeMillis() + 3600 * 1000)) // 1 hour expiration
                 .audience().add(audience).and()

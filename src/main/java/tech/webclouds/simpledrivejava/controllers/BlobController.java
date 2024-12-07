@@ -5,6 +5,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import tech.webclouds.simpledrivejava.configs.ApplicationProperties;
 import tech.webclouds.simpledrivejava.helpers.StorageServiceFactory;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/blobs")
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('ROLE_USER')")
 public class BlobController {
 
     private final BlobMetadataRepository metadataRepository;
@@ -41,30 +43,19 @@ public class BlobController {
         }
 
         BlobMetadata metadata = metadataOptional.get();
-        byte[] data = storageServiceFactory
-                .getStorageService(metadata.getStorageType())
-                .getBlob(id, metadata.getContentType());
+        byte[] data = storageServiceFactory.getStorageService(metadata.getStorageType()).getBlob(id, metadata.getContentType());
 
         String base64 = Base64.getEncoder().encodeToString(data);
 
-        BlobResponse blobResponse = new BlobResponse(
-                metadata.getBlobId(),
-                base64,
-                metadata.getSize(),
-                metadata.getCreatedAt()
-        );
+        BlobResponse blobResponse = new BlobResponse(metadata.getBlobId(), base64, metadata.getSize(), metadata.getCreatedAt());
         return ResponseEntity.ok(blobResponse);
     }
 
     @GetMapping
     public List<BlobResponse> getBlobs(@RequestParam(required = false) String storageType) {
-        List<BlobMetadata> blobs = (storageType != null)
-                ? metadataRepository.findByStorageType(BlobStorageType.valueOf(storageType))
-                : metadataRepository.findAll();
+        List<BlobMetadata> blobs = (storageType != null) ? metadataRepository.findByStorageType(BlobStorageType.valueOf(storageType)) : metadataRepository.findAll();
 
-        return blobs.stream()
-                .map(blob -> new BlobResponse(blob.getBlobId(), "", blob.getSize(), blob.getCreatedAt()))
-                .collect(Collectors.toList());
+        return blobs.stream().map(blob -> new BlobResponse(blob.getBlobId(), "", blob.getSize(), blob.getCreatedAt())).collect(Collectors.toList());
     }
 
     @PostMapping
@@ -82,26 +73,14 @@ public class BlobController {
 
         byte[] data = Base64.getDecoder().decode(base64Data);
 
-        BlobMetadata metadata = new BlobMetadata(
-                null,
-                request.id(),
-                storageType,
-                data.length,
-                new Date(),
-                contentType
-        );
+        BlobMetadata metadata = new BlobMetadata(null, request.id(), storageType, data.length, new Date(), contentType);
         metadataRepository.save(metadata);
         boolean isSaved = storageServiceFactory.getStorageService(storageType).saveBlob(request.id(), data, contentType);
         if (!isSaved) {
             return ResponseEntity.badRequest().body(Map.of("message", "Failed to store blob"));
         }
         String base64 = Base64.getEncoder().encodeToString(data);
-        BlobResponse blobResponse = new BlobResponse(
-                metadata.getBlobId(),
-                base64,
-                metadata.getSize(),
-                metadata.getCreatedAt()
-        );
+        BlobResponse blobResponse = new BlobResponse(metadata.getBlobId(), base64, metadata.getSize(), metadata.getCreatedAt());
         return ResponseEntity.ok(blobResponse);
     }
 
