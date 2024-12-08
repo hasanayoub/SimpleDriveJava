@@ -43,8 +43,6 @@ public class FtpStorageService implements IStorageService {
                 // Set FTP mode
                 ftpClient.enterLocalPassiveMode(); // Use passive mode if behind a firewall
                 ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-//                ftpClient.setFileTransferMode(FTP.BINARY_FILE_TYPE);
-                ftpClient.enterLocalPassiveMode();
 
                 // Upload a file
                 String remoteFile = id + ext;
@@ -82,7 +80,7 @@ public class FtpStorageService implements IStorageService {
         try {
             // Get file extension from content type
             String ext = LocalFileStorageService.getExtFromMimeType(contentType);
-            String remoteFile = id + ext;
+            String remoteFile = "/" + id + ext;
 
             // Connect and login
             var serverUrl = ftpServerUrl != null && ftpServerUrl.startsWith("ftp://") ? ftpServerUrl.replace("ftp://", "") : ftpServerUrl;
@@ -98,10 +96,16 @@ public class FtpStorageService implements IStorageService {
             ftpClient.enterLocalPassiveMode();
             ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
+            System.setProperty("javax.net.debug", "all");
             // Download the file
             try (var outputStream = new ByteArrayOutputStream()) {
                 boolean success = ftpClient.retrieveFile(remoteFile, outputStream);
                 if (!success) {
+                    int replyCode = ftpClient.getReplyCode();
+                    String replyMessage = ftpClient.getReplyString();
+                    System.err.println("FTP Reply Code: " + replyCode);
+                    System.err.println("FTP Reply Message: " + replyMessage);
+
                     throw new CustomProblemException(404, "File not found on FTP server: " + remoteFile);
                 }
                 return outputStream.toByteArray();
