@@ -33,7 +33,7 @@ spring:
       hibernate:
         format_sql: true
 app:
-  appSecret: YjJMB9y4shdriveS4ME+HN==
+  appSecret: YjJMB9y4shij7DRIVES+HN==
   #  StorageType: S3 # Possible values S3, Local, Database, Ftp
   #  StorageType: Local # Possible values S3, Local, Database, Ftp
   #  StorageType: Ftp # Possible values S3, Local, Database, Ftp

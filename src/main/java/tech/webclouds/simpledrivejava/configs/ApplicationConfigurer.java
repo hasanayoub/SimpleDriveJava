@@ -35,7 +35,7 @@ public class ApplicationConfigurer {
     public StringEncryptor stringEncryptor() {
         PooledPBEStringEncryptor encryptor = new PooledPBEStringEncryptor();
         SimpleStringPBEConfig config = new SimpleStringPBEConfig();
-        config.setPassword("YjJMB9y4shij7DRIVES+HN==");
+        config.setPassword(applicationProperties.getAppSecret());
         config.setAlgorithm("PBEWithMD5AndTripleDES");
         config.setKeyObtentionIterations("1000");
         config.setPoolSize("1");
