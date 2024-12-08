@@ -15,11 +15,9 @@ public class ApplicationProperties {
     private Logging logging;
     private UserAuth userAuth;
     private JwtToken jwtToken;
-    private Minio minio;
     private S3 s3;
     private Ftp ftp;
     private FileSystem fileSystem;
-    private Database database;
     private Testing testing;
     private String appSecret;
 
@@ -42,14 +40,6 @@ public class ApplicationProperties {
     }
 
     @Data
-    public static class Minio {
-        private String bucketUrl;
-        private String accessKey;
-        private String secretKey;
-        private String region;
-    }
-
-    @Data
     public static class S3 {
         private String bucketUrl;
         private String accessKey;
@@ -67,16 +57,6 @@ public class ApplicationProperties {
     @Data
     public static class FileSystem {
         private String storagePath;
-    }
-
-    @Data
-    public static class Database {
-        private String server;
-        private String databaseName;
-        private String user;
-        private String password;
-        private String rdbms;
-        private String rdbmsVersion;
     }
 
     @Data
