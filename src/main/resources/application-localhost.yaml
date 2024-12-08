@@ -1,4 +1,3 @@
-
 spring:
   datasource:
     url: jdbc:mysql://localhost/simple_drive?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Riyadh&max_allowed_packet=16M&allowPublicKeyRetrieval=true
@@ -34,7 +33,10 @@ spring:
       hibernate:
         format_sql: true
 app:
-  StorageType: S3
+  #  StorageType: S3 # Possible values S3, Local, Database, Ftp
+  #  StorageType: Local # Possible values S3, Local, Database, Ftp
+  StorageType: Ftp # Possible values S3, Local, Database, Ftp
+  #  StorageType: Database # Possible values S3, Local, Database, Ftp
   Logging:
     LogLevel:
       Default: Information
@@ -48,12 +50,12 @@ app:
     TokenIssuer: HassanAyoub
     JwtSecretKey: S9@q(cJE2AgfM%PwI(pZSXjNBwH#W&mp
     TokenAudience: PublicUsers
-  S3:
+  Minio:
     BucketUrl: https://minio-drivey.eu.ngrok.io
     AccessKey: 75F6AM42UAL3MV8NWH49
     SecretKey: HpEYTKiC+bqEpU7+sDdxpYzBNN+Me5x+YY8PJVzZ
     Region: us-east-1
-  Minio:
+  S3:
     BucketUrl: https://paylinkspaces.ams3.digitaloceanspaces.com
     AccessKey: DO00WGRPUQTAXA9RZB9F
     SecretKey: uPDVBvDSjVen4bIRnhWdcB5r89MdS/Y6pKsoyu7BWdk

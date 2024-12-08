@@ -1,15 +1,16 @@
 package tech.webclouds.simpledrivejava.services;
 
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
 import org.springframework.stereotype.Service;
 import tech.webclouds.simpledrivejava.configs.ApplicationProperties;
 import tech.webclouds.simpledrivejava.errors.CustomProblemException;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.Base64;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
+@SuppressWarnings("DuplicatedCode")
 @Service
 public class FtpStorageService implements IStorageService {
 
@@ -26,60 +27,96 @@ public class FtpStorageService implements IStorageService {
     @Override
     public boolean saveBlob(String id, byte[] data, String contentType) {
         try {
-            // Get file extension from content type
-            String ext = LocalFileStorageService.getExtFromMimeType(contentType);
-            URI uri = URI.create(ftpServerUrl + id + ext);
+            FTPClient ftpClient = new FTPClient();
 
-            // Create the basic authentication header
-            String auth = ftpUsername + ":" + ftpPassword;
-            String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+            try {
+                String ext = LocalFileStorageService.getExtFromMimeType(contentType);
+                // Connect and login
+                var serverUrl = ftpServerUrl != null && ftpServerUrl.startsWith("ftp://") ? ftpServerUrl.replace("ftp://", "") : ftpServerUrl;
+                if (serverUrl.endsWith("/")) {
+                    serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+                }
+                ftpClient.connect(serverUrl);
+                ftpClient.login(ftpUsername, ftpPassword);
+                System.out.println("Connected to FTP server!");
 
-            // Create the HTTP request
-            HttpRequest request = HttpRequest.newBuilder().uri(uri)
-                    .header("Authorization", "Basic " + encodedAuth)
-                    .header("Content-Type", contentType)
-                    .PUT(HttpRequest.BodyPublishers.ofByteArray(data))
-                    .build();
+                // Set FTP mode
+                ftpClient.enterLocalPassiveMode(); // Use passive mode if behind a firewall
+                ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+//                ftpClient.setFileTransferMode(FTP.BINARY_FILE_TYPE);
+                ftpClient.enterLocalPassiveMode();
 
-            // Send the HTTP request
-            try (HttpClient client = HttpClient.newHttpClient()) {
-                HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
-                // Check the response status code
-                return response.statusCode() == 200 || response.statusCode() == 201 || response.statusCode() == 204;
+                // Upload a file
+                String remoteFile = id + ext;
+                try (ByteArrayInputStream inputStream = new ByteArrayInputStream(data)) {
+                    boolean done = ftpClient.storeFile(remoteFile, inputStream);
+                    if (done) {
+                        System.out.println("File uploaded successfully!");
+                    } else {
+                        System.out.println("File upload failed.");
+                    }
+                    return true; // Assume success if no exception occurs
+                }
+            } catch (IOException e) {
+                e.printStackTrace(System.out);
+            } finally {
+                try {
+                    if (ftpClient.isConnected()) {
+                        ftpClient.logout();
+                        ftpClient.disconnect();
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace(System.out);
+                }
             }
         } catch (Exception ex) {
             System.err.println("Error uploading blob to FTP: " + ex.getMessage());
-            return false;
         }
+        return false;
     }
 
     @Override
     public byte[] getBlob(String id, String contentType) {
+        FTPClient ftpClient = new FTPClient();
+
         try {
             // Get file extension from content type
             String ext = LocalFileStorageService.getExtFromMimeType(contentType);
-            URI uri = URI.create(ftpServerUrl + id + ext);
+            String remoteFile = id + ext;
 
-            // Create the basic authentication header
-            String auth = ftpUsername + ":" + ftpPassword;
-            String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
-
-            // Create the HTTP request
-            HttpRequest request = HttpRequest.newBuilder().uri(uri).header("Authorization", "Basic " + encodedAuth).GET().build();
-
-            // Send the HTTP request and get the response
-            try (HttpClient client = HttpClient.newHttpClient()) {
-                HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-
-                // Check the response status code and return the body if successful
-                if (response.statusCode() == 200) {
-                    return response.body();
-                } else {
-                    throw new CustomProblemException(response.statusCode(), "Error downloading blob from FTP: HTTP status ");
-                }
+            // Connect and login
+            var serverUrl = ftpServerUrl != null && ftpServerUrl.startsWith("ftp://") ? ftpServerUrl.replace("ftp://", "") : ftpServerUrl;
+            if (serverUrl.endsWith("/")) {
+                serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
             }
-        } catch (Exception ex) {
+
+            ftpClient.connect(serverUrl);
+            ftpClient.login(ftpUsername, ftpPassword);
+            System.out.println("Connected to FTP server!");
+
+            // Set FTP mode
+            ftpClient.enterLocalPassiveMode();
+            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+
+            // Download the file
+            try (var outputStream = new ByteArrayOutputStream()) {
+                boolean success = ftpClient.retrieveFile(remoteFile, outputStream);
+                if (!success) {
+                    throw new CustomProblemException(404, "File not found on FTP server: " + remoteFile);
+                }
+                return outputStream.toByteArray();
+            }
+        } catch (IOException ex) {
             throw new CustomProblemException(500, "Error downloading blob from FTP: " + ex.getMessage());
+        } finally {
+            try {
+                if (ftpClient.isConnected()) {
+                    ftpClient.logout();
+                    ftpClient.disconnect();
+                }
+            } catch (IOException ex) {
+                System.err.println("Error closing FTP connection: " + ex.getMessage());
+            }
         }
     }
 }

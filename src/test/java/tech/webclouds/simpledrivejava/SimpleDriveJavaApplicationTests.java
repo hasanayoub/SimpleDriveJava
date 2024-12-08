@@ -2,6 +2,7 @@ package tech.webclouds.simpledrivejava;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.lang.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,15 +17,15 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest("spring.profiles.active=localhost")
 class SimpleDriveJavaApplicationTests {
+
+    @Value("${StorageType}")
+    private String storageType;
 
     @Value("${app.S3.BucketUrl}")
     private String bucketUrl;
@@ -161,6 +162,56 @@ class SimpleDriveJavaApplicationTests {
         assertEquals(HttpStatus.OK.value(), response.statusCode());
         BlobResponse[] blobs = objectMapper.readValue(response.body(), BlobResponse[].class);
         assertTrue(blobs.length > 0);
+    }
+
+    @Test
+    public void uploadBlob_GetBlobsListData() throws Exception {
+
+        // Get Token
+        String token = getToken();
+        HttpClient client = HttpClient.newHttpClient();
+
+        // Set Authorization Header
+        HttpRequest listRequest = HttpRequest.newBuilder()
+                .uri(URI.create(serverUrl + "/api/v1/blobs?storageType=" + storageType))
+                .header("Authorization", "Bearer " + token)
+                .GET()
+                .build();
+
+        HttpResponse<String> listResponse = client.send(listRequest, HttpResponse.BodyHandlers.ofString());
+        System.out.println("Response: " + listResponse.statusCode());
+
+        // Assert
+        Assertions.assertEquals(200, listResponse.statusCode());
+
+        // Parse JSON response
+        ObjectMapper objectMapper = new ObjectMapper();
+        BlobResponse[] blobsMetaData = objectMapper.readValue(listResponse.body(), BlobResponse[].class);
+
+        if (blobsMetaData != null) {
+            int blobCount = blobsMetaData.length;
+            System.out.println("Blobs: " + blobCount);
+
+            List<BlobResponse> blobsWithData = new ArrayList<>();
+            for (BlobResponse blob : blobsMetaData) {
+                HttpRequest blobRequest = HttpRequest.newBuilder()
+                        .uri(URI.create(serverUrl + "/api/v1/blobs/" + blob.id()))
+                        .header("Authorization", "Bearer " + token)
+                        .GET()
+                        .build();
+
+                HttpResponse<String> blobResponse = client.send(blobRequest, HttpResponse.BodyHandlers.ofString());
+                Assertions.assertEquals(200, blobResponse.statusCode());
+                System.out.println("Blob Data: " + blobResponse.statusCode());
+
+                BlobResponse blobMetaData = objectMapper.readValue(blobResponse.body(), BlobResponse.class);
+                if (blobMetaData != null) blobsWithData.add(blobMetaData);
+            }
+
+            Assertions.assertEquals(blobCount, blobsWithData.size());
+        } else {
+            Assertions.fail("Blob metadata is null");
+        }
     }
 
     private String getToken() throws Exception {
