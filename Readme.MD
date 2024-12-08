@@ -25,6 +25,12 @@
 ---
 
 ## **3. Configure `application-localhost.yaml`**
+- Copy the provided `application-localhost.yaml` to your desired environment configuration file:
+    ```
+    cp src/main/resources/application-localhost.yaml src/main/resources/application-<ENV>.yaml
+    ```
+    - Replace `<ENV>` with the environment name (e.g., `production`, `testing`).
+
 - **Encryption for Sensitive Data**:
     - Use the `appSecret` provided in the configuration:
       ```
