@@ -1,5 +1,11 @@
 package tech.webclouds.simpledrivejava.controllers;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.transaction.Transactional;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Valid;
@@ -44,8 +50,16 @@ public class BlobController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getBlob(@PathVariable String id) {
+    @Operation(summary = "Get Blob", description = "Get blob by ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Blob found", content = @Content(schema = @Schema(implementation = BlobResponse.class))),
+            @ApiResponse(responseCode = "404", description = "Blob not found")
+    })
+    public ResponseEntity<?> getBlob(
+            @Parameter(description = "The id of the blob", required = true)
+            @PathVariable String id) {
         Optional<BlobMetadata> metadataOptional = metadataRepository.findByBlobId(id);
+
         if (metadataOptional.isEmpty()) {
             return ResponseEntity.status(404).body(Map.of("message", "Blob not found"));
         }
@@ -60,7 +74,13 @@ public class BlobController {
     }
 
     @GetMapping
-    public List<BlobResponse> getBlobs(@RequestParam(required = false) String storageType) {
+    @Operation(summary = "Get Blobs", description = "Get all blobs")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Blobs found", content = @Content(schema = @Schema(implementation = BlobResponse.class)))
+    })
+    public List<BlobResponse> getBlobs(
+            @Parameter(description = "The storage type of the blobs. Allowed values are: S3, Local, Database, Ftp")
+            @RequestParam(required = false) String storageType) {
         List<BlobMetadata> blobs = (storageType != null) ? metadataRepository.findByStorageType(BlobStorageType.valueOf(storageType)) : metadataRepository.findAll();
 
         return blobs.stream().map(blob -> new BlobResponse(blob.getBlobId(), "", blob.getSize(), blob.getCreatedAt())).collect(Collectors.toList());
@@ -68,7 +88,14 @@ public class BlobController {
 
     @PostMapping
     @Transactional
-    public ResponseEntity<?> uploadBlob(@Valid @RequestBody BlobRequest request) {
+    @Operation(summary = "Upload Blob", description = "Upload a blob")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Blob uploaded", content = @Content(schema = @Schema(implementation = BlobResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Bad request")
+    })
+    public ResponseEntity<?> uploadBlob(
+            @Parameter(description = "Blob request", required = true, content = @Content(schema = @Schema(implementation = BlobRequest.class)))
+            @Valid @RequestBody BlobRequest request) {
 
         var violations = validator.validate(request);
         if (!violations.isEmpty()) {
